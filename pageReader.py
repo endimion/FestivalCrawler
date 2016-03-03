@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import re
 import urllib2
 
@@ -8,15 +11,18 @@ class pageNode:
     # and the father of it
     # also it stores all of the children nodes of that tag as an array
 
-    father = None
-    kids = []
-    content=""
-    name=""
-    isClosed = False
+    #father = None
+    #kids = []
+    #content=""
+    #name=""
+    #isClosed = False
 
     def __init__(self, name,content):
         self.name = name
         self.content = content
+        self.kids = []
+        self.father = None
+        self.isClosed = False
 
     def add_father(self, father):
         self.father = father
@@ -28,7 +34,7 @@ class pageNode:
         self.isClosed= True
 
     def __str__(self):
-        return self.name + " is closed: " +  str(self.isClosed) + "\n children " + str(self.kids) + "\n contents " +self.content
+        return "NAME: " + self.name + "\n CLOSED: " +  str(self.isClosed) + "\n CHILDREN:: " + str(self.kids) + "\n CONTENTS:: " +self.content
 
 
 
@@ -48,6 +54,7 @@ class PageParser:
 
     def __init__(self, url):
         self.url = url
+        self.nodes = []
 
 
 
@@ -77,7 +84,11 @@ class PageParser:
     def makeNode(self,reg,string):
         m = re.search(reg,string)
         main_tag = string[m.start():m.end()]
-        tag_name = main_tag.replace("<","").replace(">","").replace("/","")
+
+        tag_name = main_tag.replace("</","").replace(">","").replace("<","")
+
+
+
 
         rest = string[m.end():]
         c = re.search( "<", rest) # find the first opening < in the line
@@ -112,6 +123,7 @@ class PageParser:
         p_openning = re.compile("(<(?!/)(.*?)>)")
         p_closing = re.compile("(</(.*?)>)")
 
+
         contents_reg = "(.*?!<)"
         the_string = string.strip()
 
@@ -129,6 +141,12 @@ class PageParser:
                     #print " closing " + the_string
                     the_node = self.makeNode("(</(.*?)>)",the_string)
                     the_node.isClosed = True
+                else:
+                    # in this case the line is neither opening nor closing a tag
+                    # so it is a simple string, i.e. a content for the previously opened
+                    # tag
+                    if len(self.nodes) > 0:
+                        self.nodes[len(self.nodes)-1].content = the_string
 
 
         if the_node != None:
@@ -139,71 +157,25 @@ class PageParser:
 
 
 
-    """
-    def matchAndStore2(self,string,regex,style):
-        # takes as input a string
-        # and checks if it matches it completely
-        # style is a string that denotes if we are looking for an opening or closing tag
-
-        m = re.search(regex,string)
-        if m :
-            #print "sub" + string[:m.end()]
-            #print m.start(),m.end()
-            #print " G:: " + m.group()
-            if (m.end() - m.start() != len(string)):
-
-                match =  string[:m.end()]
-                substr = string[m.end():len(string)]
-
-                print " match ::"  + match + "SUB :: " + substr
-
-                if not self.matchAndStore(substr,self.opening_tag_reg,"opens"):
-                    self.matchAndStore(substr,self.closing_tag_reg,"closes")
-                #pass
-            else:
-                # if the line contains only one <tag>
-                if style == "opens":
-                    type = m.group().replace("<","").split(" ")[0]
-                else:
-                    type = m.group().replace("</","").split(" ")[0]
-
-                nod = pageNode(type,style)
-                if style =="close":
-                    self.findNodeToClose(type)
-
-                nod.father = self.findFather()
-                #nod.style = style
-
-
-                self.nodes.append(nod)
-                print "line exhausted"
-
-                return True
-
-        return False
-    """
-
-
-
-
 
 
     def parseUrl(self):
         data = urllib2.urlopen(self.url)
 
-
         for line in data :
             line = line.strip()
-            #if not self.matchAndStore(line, self.opening_tag_reg,"opens"):
-            #    self.matchAndStore(line, self.closing_tag_reg,"closes")
             self.matchAndStore(line)
 
-        print len(self.nodes)
-        for node in self.nodes:
-            #line = line.strip()
+        data.close()
 
-            print node
-            #print line
-        #print the_page.text
+        print len(self.nodes)
+
+
+
+        # then we scan all the nodes to add the children to their fathers
+        for node in self.nodes:
+           for child in self.nodes:
+                if child.father == node:
+                    node.add_child (child)
 
 
