@@ -22,7 +22,8 @@ class FestCrawler:
 
     def __init__(self):
         self.the_nodes=[]
-        #self.festivals = []
+        self.pagesToSearchNext = [] # stores the pages we will search next
+
 
 
     def strip_tags(self,html):
@@ -33,16 +34,17 @@ class FestCrawler:
 
 
 
-    def searchForLink(self, node, festival):
+    def searchForLink(self, node):
         # checks the name of the node to see if it contains
         # a link element, i.e. href
-        # if it does then the link from the tag is retrieved and
-        # stored at the given Festival object url attribute
+        # if it does then the link from the tag is added to the queue to
+        # search in
 
         m = re.search('(?<=href=\')(.*?\')?', node.name)
         if m:
-            festival.url = m.group(0).replace("\'","")
-            #print festival.url
+            url = m.group(0).replace("\'","")
+            print "added " + url
+            self.pagesToSearchNext.append(url)
 
 
     def searchForImage(self,node,festival, _url):
@@ -59,10 +61,22 @@ class FestCrawler:
         # that contains the information about the festival such as,
         # url, date, and an image about the festival
 
+        # Algorithm:
+        # A .if the festival keyword is found in a link and not in a div etc.
+        # then the link is pushed to a queue and the link is visited next
+        #
+        # B. If the festival is found inside a div etc. then
+        # we have found a page that contains information about the festival
+        # thus as its link we add the current page we are visiting
+        # the festival name gets set to the name found inside the <tag>
+        # and as images we add all the potential images found
+
         parser = PageParser(url)
         parser.parseUrl()
         self.the_nodes = parser.nodes
         festivals = []
+
+
 
         keywords = ["Φεστιβάλ","φεστιβάλ", "Festival", "festival"]
         #keywords = [ ",".join([c + " " + island, island +" "+c]) for c in keywords]
@@ -72,50 +86,43 @@ class FestCrawler:
             for keyword in keywords :
 
                 if (keyword in node.content and island in node.content) or (keyword in node.name and island in node.name):
-                    #print " matching tag found-->" + str(node)
+
                     if keyword in node.content:
-                        festival = Festival(node.content,"","","")
-                    else:
-                        name = self.strip_tags("<"+node.name +">")
-                        festival = Festival(name,"","","")
+                        # if the keyword was found in the content of a node
+                        # then this page will likely contain info about a festival
+                        # so we create a new festival object
+                        festival = Festival(node.content,url,"","")
 
-                    # if there is a url in the node
-                    if "href" in node.name:
-                         self.searchForLink(node,festival)
-                    else:
-                        #print "will look inside the children of " + node.name   + " for href links" + str(len(node.kids))
-                        #print node.content
-                        # we try to find a link in the children of the father
+                        # search the children of the node for image elements:
                         for child in node.kids:
-                            if "href" in child.name:
-                                self.searchForLink(child,festival)
+                            if "img" in child.name:
+                                self.searchForImage(child,festival,url)
                                 break
 
-                        #if i didnt find a link in the children then i will look in the siblings
-                        if festival.url == "":
+                        # if no image was found then we search the siblings
+                        if festival.img =="":
                             for sibling in node.father.kids:
-                                if "href" in sibling.name:
-                                    self.searchForLink(sibling,festival)
+                                if "img" in sibling.name:
+                                    #print "found an image inside sibling " + sibling.name
+                                    self.searchForImage(sibling,festival,url)
                                     break
+                        # finally the festival is added to the list of festivals
+                        festivals.append(festival)
+                    else:
+                        # the keyword was found probably found inside a link
+                        # if there is a url in the node
+                        if "href" in node.name:
+                             self.searchForLink(node)
 
-                    # search the children of the node for image elements:
-                    for child in node.kids:
-                        if "img" in child.name:
-                            #print "found an image inside " + node.name
-                            self.searchForImage(child,festival,url)
-                            break
 
-                    # if no image was found then we search the siblings
-                    if festival.img =="":
-                        for sibling in node.father.kids:
-                            if "img" in sibling.name:
-                                #print "found an image inside sibling " + sibling.name
-                                self.searchForImage(sibling,festival,url)
-                                break
 
-                    festivals.append(festival)
+
+
+
+
 
         cleaned_fests = []
+
         for fest in festivals:
             if not(fest.name == "" and fest.url == "" and fest.date=="" and fest.img==""):
                 cleaned_fests.append(fest)
