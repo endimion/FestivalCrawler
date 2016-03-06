@@ -30,9 +30,11 @@ class FestCrawler:
                         "November","December","Ιανουάριος","Φεβρουάριος","Μάρτιος",
                         "Απρίλιος","Μάιος","Ιούνιος","Ιούλιος","Αύγουστος","Σεπτέμβριος","Οκτώβριος","Νοέμβριος","Δεκέμβριος"
                         ,"Ιανουαρίου","Φεβρουαρίου","Μαρτίου","Απριλίου","Μαίου","Ιουνίου","Σεπτεμβρίου","Οκτωβρίου","Νοεμβρίου","Δεκεμβρίου"]
-        monthRegList = [ "([0-9][0-9])+ \s"+ m + "[0,9]{4}" for m in self.months]
+        monthRegList = [ "[0-9]{1,2}\s+"+ m + "\s+([0-9]{2,4})(.*)" for m in self.months]
         monthRegExpr = "|".join(monthRegList)
-        self.monthReg = re.compile(monthRegExpr)
+        #print monthRegExpr
+        self.dateReg = re.compile(monthRegExpr)
+
 
 
     def strip_tags(self,html):
@@ -92,6 +94,52 @@ class FestCrawler:
         return None
 
 
+
+    def searchTreeForDate(self,node,festival):
+        # searches a node and its children
+        # for a date string in the contents of the node
+        m = self.dateReg.search(node.content)
+        if m:
+            print "Date found "+ node.content
+            festival.date = m.group(0)
+        else:
+            for child in node.kids:
+                self.searchTreeForDate(child,festival)
+
+
+
+    def getNameFromContent(self,content,island):
+        # retrieves the name of the festival
+        # from the content of the node it resides in
+        # in a simple way,
+        content_array = content.split(" ")
+        festival_index = -1
+        island_index = -1
+        for i in range(0,len(content_array)):
+
+            if content_array[i] in self.keywords:
+                if festival_index == -1:
+                    festival_index = i
+
+            if content_array[i] == island:
+                if island_index == -1:
+                    island_index = i
+
+
+        if festival_index >= 0 and island_index >= 0:
+            if festival_index > island_index :
+                return (" ").join(content_array[island_index:festival_index])
+            else:
+                return (" ").join(content_array[festival_index:island_index])
+        else:
+            return content
+
+
+
+
+
+
+
     def searchPage(self,url, island):
         # searches the url for nodes that contain the keywords festival etc.
         # then for each such node we create a new Festival object
@@ -128,16 +176,25 @@ class FestCrawler:
                         # if the keyword was found in the content of a node
                         # then this page will likely contain info about a festival
                         # so we create a new festival object
-                        festival = Festival(node.content,url,"","")
+                        festival_name = self.getNameFromContent(node.content,island)
+
+                        festival = Festival(festival_name,url,"","")
 
                         # search the children of the node for image elements:
                         imgTag = self.searchTreeForImg(node,festival,url)
-
 
                         # if no image was found then we search the siblings and their children
                         if len(festival.img) == 0:
                             for sibling in node.father.kids:
                                 self.searchTreeForImg(sibling,festival,url)
+
+                        # search for a date in the node or its children!
+                        #testDate = "10 January 2013"
+                        #match = self.dateReg.search(testDate)
+                        #if match:
+                        #    print match.group(0)
+                        self.searchTreeForDate(node,festival)
+
 
                         festivals.append(festival)
                     else:
@@ -145,6 +202,10 @@ class FestCrawler:
                         # if there is a url in the node
                         if "href" in node.name:
                              self.searchForLink(node)
+
+
+
+
 
         #search the newly added urls
         # for festivals

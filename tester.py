@@ -32,3 +32,12 @@ spider.searchPage(_url,"Kos")
 
 _url = "http://www.greeka.com/cyclades/ios/ios-festivals.htm"
 spider.searchPage(_url,"Ios")
+
+_url = "http://www.parospark.com/festival-at-the-park/"
+spider.searchPage(_url,"Paros")
+
+_url = "http://www.stimarpissa.gr/"
+spider.searchPage(_url,"Πάρο")
+
+_url = "http://parospress.blogspot.gr/2015/09/paris-paros_30.html"
+spider.searchPage(_url,"Πάρο")

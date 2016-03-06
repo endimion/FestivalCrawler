@@ -160,15 +160,18 @@ class PageParser:
 
 
     def parseUrl(self):
-        data = urllib2.urlopen(self.url)
+        try:
+            data = urllib2.urlopen(self.url)
 
-        for line in data :
-            line = line.strip()
-            self.matchAndStore(line)
+            for line in data :
+                line = line.strip()
+                self.matchAndStore(line)
 
-        data.close()
+            data.close()
 
-        print len(self.nodes)
+            print len(self.nodes)
+        except:
+            print "could not read url " + self.url
 
 
 
