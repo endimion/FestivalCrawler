@@ -23,7 +23,9 @@ class FestCrawler:
     def __init__(self):
         self.the_nodes=[]
         self.pagesToSearchNext = [] # stores the pages we will search next
-
+        self.imgReg = re.compile('(?<=src=\')(.*?((.jpg)|(.png))\')?')
+        self.altReg = re.compile('(?<=alt=\')(.*?\')?')
+        self.keywords =["Φεστιβάλ","φεστιβάλ", "Festival", "festival"]
 
 
     def strip_tags(self,html):
@@ -43,16 +45,44 @@ class FestCrawler:
         m = re.search('(?<=href=\')(.*?\')?', node.name)
         if m:
             url = m.group(0).replace("\'","")
-            print "added " + url
+            print "url to search next, added: " + url
             self.pagesToSearchNext.append(url)
 
 
-    def searchForImage(self,node,festival, _url):
-        m = re.search('(?<=src=\')(.*?\')?', node.name.replace("\"","\'"))
+    def searchAndStoreImage(self,node,festival, _url):
+        # searches the give nod for an img tag
+        # next if an alt attribute is contained then if that contains
+        # a keyword in the description, then the link for the img is added to the
+        # list of imgs of the festival
+        m = self.imgReg.search(node.name.replace("\"","\'"))
         if m:
-            festival.img.append(m.group(0))
+            #print "image found "
+            if "alt" in node.name:
+                # if the image contains an alt description then that should include
+                # logically the name of the island and the keyword festival
+                alt = self.altReg.search(node.name.replace("\"","\'"))
+                #print "image contains alt  " + alt.group(0)
+                for key in self.keywords:
+                    if key in alt.group(0):
+                        #print "IMG WILL BE ADDED"
+                        if len(m.group(0)) > 5 :
+                            # if the length of the img path is more than 5 characters
+                            festival.img.append(m.group(0))
+            return node
+        else:
+            return None
             #print  festival.img
 
+
+
+    def searchTreeForImg(self,node, festival, url):
+        # search the node and all of its children  for an
+        # for  an img element and add these to the images of the festival
+        # if no such descendant is found None is returned
+        res = self.searchAndStoreImage(node,festival,url)
+        for child in node.kids:
+            res = self.searchTreeForImg(child,festival,url)
+        return None
 
 
     def searchPage(self,url, island):
@@ -94,19 +124,14 @@ class FestCrawler:
                         festival = Festival(node.content,url,"","")
 
                         # search the children of the node for image elements:
-                        for child in node.kids:
-                            if "img" in child.name:
-                                self.searchForImage(child,festival,url)
-                                break
+                        imgTag = self.searchTreeForImg(node,festival,url)
 
-                        # if no image was found then we search the siblings
-                        if festival.img =="":
+
+                        # if no image was found then we search the siblings and their children
+                        if len(festival.img) == 0:
                             for sibling in node.father.kids:
-                                if "img" in sibling.name:
-                                    #print "found an image inside sibling " + sibling.name
-                                    self.searchForImage(sibling,festival,url)
-                                    break
-                        # finally the festival is added to the list of festivals
+                                self.searchTreeForImg(sibling,festival,url)
+
                         festivals.append(festival)
                     else:
                         # the keyword was found probably found inside a link
@@ -114,11 +139,12 @@ class FestCrawler:
                         if "href" in node.name:
                              self.searchForLink(node)
 
-
-
-
-
-
+        #search the newly added urls
+        # for festivals
+        for new_url in self.pagesToSearchNext:
+            print "will look in page " + new_url
+            self.pagesToSearchNext.remove(new_url)
+            self.searchPage(new_url,island)
 
 
         cleaned_fests = []

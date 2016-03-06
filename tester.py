@@ -29,3 +29,6 @@ spider.searchPage(_url, "chania")
 
 _url = "http://www.kosinfo.gr/events"
 spider.searchPage(_url,"Kos")
+
+_url = "http://www.greeka.com/cyclades/ios/ios-festivals.htm"
+spider.searchPage(_url,"Ios")
