@@ -26,6 +26,13 @@ class FestCrawler:
         self.imgReg = re.compile('(?<=src=\')(.*?((.jpg)|(.png))\')?')
         self.altReg = re.compile('(?<=alt=\')(.*?\')?')
         self.keywords =["Φεστιβάλ","φεστιβάλ", "Festival", "festival"]
+        self.months = [ "January","February","March","April","May","June","July","August","September","October",
+                        "November","December","Ιανουάριος","Φεβρουάριος","Μάρτιος",
+                        "Απρίλιος","Μάιος","Ιούνιος","Ιούλιος","Αύγουστος","Σεπτέμβριος","Οκτώβριος","Νοέμβριος","Δεκέμβριος"
+                        ,"Ιανουαρίου","Φεβρουαρίου","Μαρτίου","Απριλίου","Μαίου","Ιουνίου","Σεπτεμβρίου","Οκτωβρίου","Νοεμβρίου","Δεκεμβρίου"]
+        monthRegList = [ "([0-9][0-9])+ \s"+ m + "[0,9]{4}" for m in self.months]
+        monthRegExpr = "|".join(monthRegList)
+        self.monthReg = re.compile(monthRegExpr)
 
 
     def strip_tags(self,html):
@@ -108,7 +115,7 @@ class FestCrawler:
 
 
 
-        keywords = ["Φεστιβάλ","φεστιβάλ", "Festival", "festival"]
+        keywords = ["Φεστιβάλ ","φεστιβάλ ", "Festival ", "festival ","Festivals ","festivals "]
         #keywords = [ ",".join([c + " " + island, island +" "+c]) for c in keywords]
 
         for node in self.the_nodes:
