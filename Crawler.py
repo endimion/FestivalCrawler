@@ -109,32 +109,39 @@ class FestCrawler:
 
 
     def getNameFromContent(self,content,island):
-        # retrieves the name of the festival
-        # from the content of the node it resides in
-        # in a simple way,
-        content_array = content.split(" ")
-        festival_index = -1
-        island_index = -1
-        for i in range(0,len(content_array)):
+        content_sentences = re.split('[.,;:!]', content) # \W denotes all non-alphanumeric characters
+        matching_sentences = [] # this stores all the sentences in which both the name of the island and a keyword exists
 
-            if content_array[i] in self.keywords:
-                if festival_index == -1:
-                    festival_index = i
+        for sentence in content_sentences:
+            key_sent = ""
+            island_sent =""
 
-            if content_array[i] == island:
-                if island_index == -1:
-                    island_index = i
-
-
-        if festival_index >= 0 and island_index >= 0:
-            if festival_index > island_index :
-                return (" ").join(content_array[island_index:festival_index])
+            for keyword in self.keywords:
+                if keyword in sentence:
+                    key_sent = sentence
+                    if island in sentence:
+                        island_sent = sentence
+                    break
+            #if  flag and (island in sentence):
+            if not island_sent == "":
+                #print "appending " + island_sent
+                matching_sentences.append(island_sent)
             else:
-                return (" ").join(content_array[festival_index:island_index])
+                if not key_sent == "":
+                    #print "appending " + key_sent
+                    matching_sentences.append(key_sent)
+
+
+        # after parsing all the sentences we return the one with the smallest length
+        # as that is the most likely to contain the name of the festival
+        if len(matching_sentences) > 0:
+            min = matching_sentences[0]
+            for sent in matching_sentences:
+                if len(sent) < min:
+                    min = sent
+            return min
         else:
             return content
-
-
 
 
 
