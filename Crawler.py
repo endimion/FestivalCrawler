@@ -109,7 +109,14 @@ class FestCrawler:
 
 
     def getNameFromContent(self,content,island):
-        content_sentences = re.split('[.,;:!]', content) # \W denotes all non-alphanumeric characters
+        # goes through the content string, sentence by sentence
+        # and looks for a sentence that contains a keyword and the name ofo the island
+        # if such a sentence is found then that is returned as the name of the festival
+        # if only the keyword is found then that is returned
+        # if neither the keyword nor the island name is found in a sentence then
+        # the original content is returned
+
+        content_sentences = re.split('[.,;:!]', content)
         matching_sentences = [] # this stores all the sentences in which both the name of the island and a keyword exists
 
         for sentence in content_sentences:
