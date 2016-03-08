@@ -236,5 +236,5 @@ class FestCrawler:
                 cleaned_fests.append(fest)
 
 
-        for fest in cleaned_fests:
-            print fest
+        return cleaned_fests
+
