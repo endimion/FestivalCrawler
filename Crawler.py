@@ -31,9 +31,15 @@ class FestCrawler:
                         "Απρίλιος","Μάιος","Ιούνιος","Ιούλιος","Αύγουστος","Σεπτέμβριος","Οκτώβριος","Νοέμβριος","Δεκέμβριος"
                         ,"Ιανουαρίου","Φεβρουαρίου","Μαρτίου","Απριλίου","Μαίου","Ιουνίου","Σεπτεμβρίου","Οκτωβρίου","Νοεμβρίου","Δεκεμβρίου"]
         monthRegList = [ "[0-9]{1,2}\s+"+ m + "\s+([0-9]{2,4})(.*)" for m in self.months]
-        monthRegExpr = "|".join(monthRegList)
+        monthRegExpr1 = "|".join(monthRegList) # this will match stuff like: 10 NOvember 2013
+
+        monthRegExpr2 = "[0-9]{1,2}-[0-9]{1,2}-([0-9]{2,4})(.*)" # this will match stuff like 10-2-2014 or 10-03-15
+        monthRegExpr3 = "[0-9]{1,2}/[0-9]{1,2}/([0-9]{2,4})(.*)" # this will match stuff like 10-2-2014 or 10-03-15
+
         #print monthRegExpr
+        monthRegExpr = "|".join([monthRegExpr1 , monthRegExpr2,monthRegExpr3])
         self.dateReg = re.compile(monthRegExpr)
+
 
 
 
@@ -98,6 +104,7 @@ class FestCrawler:
     def searchTreeForDate(self,node,festival):
         # searches a node and its children
         # for a date string in the contents of the node
+
         m = self.dateReg.search(node.content)
         if m:
             print "Date found "+ node.content
@@ -177,7 +184,7 @@ class FestCrawler:
 
 
 
-        keywords = ["Φεστιβάλ ","φεστιβάλ ", "Festival ", "festival ","Festivals ","festivals "]
+        keywords = ["Φεστιβάλ ","φεστιβάλ ", "Festival ", "festival ","Festivals ","festivals ", "Γιορτή ", "γιορτή "]
         #keywords = [ ",".join([c + " " + island, island +" "+c]) for c in keywords]
 
         for node in self.the_nodes:
